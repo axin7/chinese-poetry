@@ -1,0 +1,19 @@
+name = "poetry-qdrant-gateway-20260930"
+main = "build/index.js"
+compatibility_date = "2026-09-30"
+workers_dev = false
+preview_urls = false
+
+[build]
+command = "worker-build --release --no-panic-recovery"
+
+[placement]
+region = "aws:us-west-1"
+
+[vars]
+QDRANT_GATEWAY_ONLY = "true"
+COLLECTION_NAME = "poetry_tang_20260922_v1"
+API_COLLECTION_NAME = "poetry_tang_api_20260930_v1"
+
+[observability]
+enabled = false

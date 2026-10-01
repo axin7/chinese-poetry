@@ -1,0 +1,79 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.15.5
+    container_name: poetry-qdrant
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    volumes:
+      - "${POETRY_DATA_DIR:-./data}/qdrant:/qdrant/storage"
+      - "${POETRY_DATA_DIR:-./data}/snapshots:/qdrant/snapshots"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/6333"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+
+  vector-api:
+    build:
+      context: .
+      dockerfile: docker/vector-app.Dockerfile
+    container_name: poetry-vector-api
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    env_file:
+      - path: .env.vector
+        required: false
+    environment:
+      - QDRANT_URL=http://qdrant:6334
+      - SQLITE_DB_PATH=/data/chinese_poetry.db
+      - DATASETS_CONFIG_PATH=/data/datas.json
+    volumes:
+      - type: bind
+        source: "${POETRY_SQLITE_PATH:-./chinese_poetry.db}"
+        target: /data/chinese_poetry.db
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: "${POETRY_DATASETS_PATH:-./loader/datas.json}"
+        target: /data/datas.json
+        read_only: true
+        bind:
+          create_host_path: false
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  vector-importer:
+    build:
+      context: .
+      dockerfile: docker/vector-app.Dockerfile
+    profiles: ["tools"]
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    env_file:
+      - path: .env.vector
+        required: false
+    environment:
+      - QDRANT_URL=http://qdrant:6334
+      - SQLITE_DB_PATH=/data/chinese_poetry.db
+      - DATASETS_CONFIG_PATH=/data/datas.json
+      - CHECKPOINT_PATH=/state/import_progress.json
+    volumes:
+      - type: bind
+        source: "${POETRY_SQLITE_PATH:-./chinese_poetry.db}"
+        target: /data/chinese_poetry.db
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: "${POETRY_DATASETS_PATH:-./loader/datas.json}"
+        target: /data/datas.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - "${POETRY_DATA_DIR:-./data}/importer:/state"
+    entrypoint: ["/usr/local/bin/vector-importer"]

@@ -1,0 +1,21 @@
+name = "poetry-rust-lab-20260930"
+main = "build/index.js"
+compatibility_date = "2026-09-30"
+workers_dev = true
+
+[build]
+command = "worker-build --release --no-panic-recovery"
+
+[vars]
+GENERATION = "poetry-20260921-v1"
+COLLECTION_NAME = "poetry_tang_20260922_v1"
+API_COLLECTION_NAME = "poetry_tang_api_20260930_v1"
+EMBEDDING_MODEL = "BAAI/bge-m3"
+ORIGIN_ID = "cf-poetry-rust-qdrant-gateway-20260930"
+
+[[services]]
+binding = "QDRANT_GATEWAY"
+service = "poetry-qdrant-gateway-20260930"
+
+[observability]
+enabled = false

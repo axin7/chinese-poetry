@@ -1,211 +1,327 @@
-# 诗词向量检索系统设计
+# 诗词语义检索设计：单结果优先
 
-## 概述
+修订日期：2026-09-18。本文已由 Go 服务实现，性能参数仍是压测起点。
 
-将古诗词按句子存入向量数据库，使用现代中文翻译生成向量，支持语义搜索。用户输入自然语言描述，返回意境相近的诗句及元信息。
+## 目标与范围
 
-## 技术选型
+查询接口同时支持大白话文本和预先生成的向量，成功检索后只展示一个结果：
+命中原句、对应译文、作品标题、作者和完整作品入口。
+点击入口可查看全部原文、翻译，并定位命中句。
+优先低延迟、高并发和较低资源占用，接受排序质量的适度折中。
 
-| 组件 | 选择 | 说明 |
-|------|------|------|
-| 向量数据库 | Qdrant | 开源，Rust 编写，支持过滤，部署简单 |
-| Embedding | SiliconFlow bge-m3 | 中文效果好，1024 维 |
-| 数据源 | SQLite (chinese_poetry.db) | 现有已翻译数据 |
+默认链路不调用 rerank；保留后台配置开关，启用时仍只返回一个结果。
+没有分页、候选列表、随机换诗或用户侧模式选择。
+检索只选择数据库已有内容，不在线生成译文或解释。
 
-## 数据模型
+## 模型与部署
 
-### Qdrant Collection 结构
+| 用途 | 选择 |
+|---|---|
+| Embedding | SiliconFlow `BAAI/bge-m3`，1024 维 |
+| Rerank | SiliconFlow `BAAI/bge-reranker-v2-m3` |
+| 模型接口 | `https://api.siliconflow.cn/v1` |
+| 向量检索 | 独立 Qdrant 服务，一个句子 collection |
+| 原文与详情 | 绑定索引版本的只读 SQLite 快照 |
+| 在线服务 | Go 标准库 HTTP、连接复用、有界并发 |
 
-```python
-# Collection: poetry_sentences
-# 向量维度: 1024
+模型与 ul-kb 的代码默认配置及评测选型一致；其运行环境覆盖值未核验。
+SiliconFlow 使用 Go `net/http` 客户端，不照搬 ul-kb 的长超时和阻塞重试策略。
+密钥通过环境提供，兼容 SILICONFLOW_KEY 和 SILICONFLOW_API_KEY。
 
+Qdrant 使用官方 Go 客户端 `github.com/qdrant/go-client/qdrant`，参考官方
+[Go 客户端仓库](https://github.com/qdrant/go-client)、
+[快速开始](https://qdrant.tech/documentation/quick-start/)和
+[Go API 文档](https://pkg.go.dev/github.com/qdrant/go-client/qdrant)。实现通过 gRPC
+端口 6334 调用 `qdrant.NewClient`、`CreateCollection`、`Upsert` 和 `Query`，
+不自行拼接 Qdrant REST 请求。
+
+单实例先部署检索应用、Qdrant 和本地 SQLite；不默认增加 Redis 或本地模型。
+部署多个实例时再决定是否需要共享缓存，并分配整体模型接口配额。
+
+## 索引单位与数据完整性
+
+此前审计得到 389,893 条物理记录，其中 done 389,635 条、skipped 258 条，
+规范化后共有 1,719,090 对原文与译文数组元素。物理记录数不等于独立作品数，
+数组元素数也不等于最终向量数；当前构建必须重新生成自己的统计清单。
+当前实现于 2026-09-18 对实际数据库全量只读扫描后，得到 1,716,980 个
+可索引元素，覆盖全部 29 个数据集。其余 2,110 对的原文与译文都不含可检索文字，
+属于纯符号内容，不生成向量；缺字符号原文只要译文包含有效文字仍会入库。
+
+使用原文与译文已对齐的数组元素，不默认按标点再次拆分。例如：
+
+```json
 {
-    "id": "tangsong_123_2",      # {table}_{poem_id}_{sentence_index}
-    "vector": [0.1, 0.2, ...],   # translation 的 embedding
-    "payload": {
-        "table": "tangsong",
-        "poem_id": 123,
-        "sentence_index": 2,
-        "original": "水文生舊浦，風色滿新花。",
-        "translation": "水波荡漾在古老的河浦，春风吹拂着盛开的新花。",
-        "title": "晦日宴高氏林亭",
-        "author": "陳嘉言"
-    }
+  "original": ["床前明月光，疑是地上霜。", "举头望明月，低头思故乡。"],
+  "translation": ["明亮的月光洒在床前，好像地上结了一层霜。", "……"]
 }
 ```
 
-### 存储估算
+每个合格元素由对应译文生成一个向量；文本查询使用同一模型生成向量，
+外部传入向量必须属于索引声明的同一向量空间。
 
-- 句子总数：~135.8 万
-- 向量存储：~5.2 GB
-- Payload 存储：~400 MB
-- 总计：~5.6 GB
+- 正文列按照 loader/datas.json 的 tag 读取，不硬编码 paragraphs。
+- 标量正文转成单元素数组；沿用已验证的规范化规则并保留原始位置映射。
+- 规范化后先校验原文与译文长度，再配对；禁止普通 zip 静默截短。
+- 过滤空文本、纯符号等不可检索内容，记录具体原因；禁止最低 256 字限制。
+- 超过模型输入限制的元素进入异常清单，不能静默截断后声称完整入库。
+- 译文相同可复用向量计算，但不同作品的来源引用必须保留。
+- done 表示处理状态，不意味着每个译文的文学含义都经过人工确认。
 
-## 导入流程
+258 条 skipped 等不合格记录仍保留在源数据及覆盖清单中。
+全量覆盖要求每条源记录和每个规范化元素都有明确去向，不强行为无效文本生成向量。
 
+## 作品标识与最小 payload
+
+每个向量点只存向量和定位字段：dataset、source_row_id、raw_index、
+normalized_index、work_id、generation。需要过滤时才加入对应字段及索引。
+原文、译文、标题和作者通过只读 SQLite 定位读取，不在每个 point 中重复全文。
+
+point ID 使用确定性的 UUIDv5，由 generation 和源元素定位生成。
+不能使用 tangsong_123_2 这样的任意字符串作为 Qdrant point ID。
+work_id 通过来源定位及作品映射清单关联，不能只按标题与作者合并。
+
+已有长作品拆分记录必须补齐父作品及分段顺序映射。
+缺少可验证关系时作为构建异常处理，不能把单个分段当作完整作品发布。
+只有原句、译文及作品详情均可解析的点才能进入线上索引。
+
+## 请求契约：文本与向量
+
+统一使用 POST /search，成功响应形状与输入类型无关。
+
+| 字段 | 类型与含义 |
+|---|---|
+| query | 可选字符串；文本检索输入，或预计算向量对应的原始查询文本 |
+| vector | 可选浮点数组；传入时固定为 1024 维 |
+| embedding_profile | 传入 vector 时必填，必须匹配当前索引的向量配置 |
+| filters | 可选对象，仅接受服务端支持的过滤条件 |
+
+query 和 vector 至少提供一个。两者同时提供时，明确以 vector 召回，
+不再调用 Embedding；query 仅用于已启用的文本 rerank。
+没有 limit、page 或面向用户的 mode 参数。
+
+文本请求示例：
+
+```json
+{"query": "一个人在外面，晚上特别想家"}
 ```
-SQLite → 读取诗词 → 拆分句子 → 调用 Embedding API → 写入 Qdrant
-```
 
-### 核心逻辑
+向量请求示例，query_vector 是调用方已生成的完整 1024 维数组：
 
 ```python
-for row in db.execute("SELECT id, title, author, paragraphs, translation FROM {table} WHERE length(translation) > 10"):
-    paragraphs = json.loads(row["paragraphs"])
-    translations = json.loads(row["translation"])
-
-    for idx, (original, trans) in enumerate(zip(paragraphs, translations)):
-        point_id = f"{table}_{row['id']}_{idx}"
-        vector = embed(trans)
-
-        points.append({
-            "id": point_id,
-            "vector": vector,
-            "payload": {
-                "table": table,
-                "poem_id": row["id"],
-                "sentence_index": idx,
-                "original": original,
-                "translation": trans,
-                "title": row["title"],
-                "author": row["author"]
-            }
-        })
-
-client.upsert(collection_name="poetry_sentences", points=points)
+request = {
+    "vector": query_vector,
+    "embedding_profile": "sf-bge-m3-1024-v1",
+}
+# 可附带原始查询文本；不会因此重新生成向量。
+request["query"] = "一个人在外面，晚上特别想家"
 ```
 
-### 优化策略
+embedding_profile 对应版本化配置：SiliconFlow BAAI/bge-m3、1024 维、
+查询/文档输入约定和向量规范化规则。客户端从集成配置取得当前 profile。
+模型或向量空间约定变化时更新 profile；仅更新诗词内容不必改变 profile。
+初始 profile 为 sf-bge-m3-1024-v1，文本与导入流程也使用这份配置。
 
-- Embedding 批量调用：每次 100-500 句
-- Qdrant 批量写入：每次 1000 个 Point
-- 断点续传：记录已处理的 poem_id
+服务端仅能核验声明的 profile 与数值结构，无法从向量数值证明其模型来源。
+不同模型即使都是 1024 维也不兼容；调用方负责使用匹配配置生成向量。
+不匹配时返回 422 和 embedding_profile_mismatch，不偷偷改用 query 重算。
 
-## 检索接口
+入口校验先于模型调用和检索：
 
-### 接口定义
+- 请求体初始限制 64 KiB，超限返回 413，防止任意长度数组占用解析资源。
+- query 如提供，去首尾空白后必须非空且不超过 512 个字符；null 不视为省略。
+- vector 如提供，必须是一维、恰好 1024 个数值；拒绝字符串、布尔值和 null。
+- 拒绝 NaN、Infinity，以及转成 float32 后溢出或整体变成零的向量。
+- 用稳定算法做 L2 归一化，转成规范的 float32 表示并统一负零。
+- SiliconFlow 返回的查询向量也执行相同的数值校验与规范化。
+- profile、filters 和字段组合不合法时返回 422，不静默忽略错误输入。
 
-```python
-def search_poetry(
-    query: str,                    # 自然语言描述
-    tables: list[str] = None,      # 指定表，None 表示全部
-    limit: int = 10                # 返回数量
-) -> list[dict]:
-    """
-    返回:
-    [
-        {
-            "score": 0.89,
-            "original": "床前明月光，疑是地上霜。",
-            "translation": "床前洒满明亮的月光...",
-            "title": "静夜思",
-            "author": "李白",
-            "table": "tangsong",
-            "poem_id": 12345,
-            "sentence_index": 0
-        }
-    ]
-    """
+不截断、不补零、不量化调用方输入来凑足维度；服务端 INT8 索引量化是独立步骤。
+
+## 默认查询路径
+
+```text
+请求 → 校验与规范化 → 单结果缓存
+  命中：直接返回
+  未命中：
+    已传 vector → 直接使用校验后的向量
+    仅传 query  → 查询向量缓存 → 必要时调用 SiliconFlow Embedding
+  两条路径汇合 → Qdrant limit=1 → SQLite 定位命中记录 → 缓存并返回一个结果
 ```
 
-### 实现
+Qdrant 搜索初始参数：
 
-```python
-def search_poetry(query: str, tables: list[str] = None, limit: int = 10):
-    query_vector = embed(query)
+| 参数 | 初始值 |
+|---|---|
+| distance / size | Cosine / 1024 |
+| limit | 1 |
+| hnsw_ef | 64；压测比较 32 |
+| exact | false |
+| with_vector | false |
+| payload 返回 | 仅定位字段 |
+| quantization.rescore | 显式设为 false |
 
-    query_filter = None
-    if tables:
-        query_filter = models.Filter(
-            should=[
-                models.FieldCondition(key="table", match=models.MatchValue(value=t))
-                for t in tables
-            ]
-        )
+limit=1 仅限制返回数量，HNSW 仍在内部探索多个候选。
+没有额外选择逻辑时，不取回 5、8 或 40 个候选再由应用丢弃。
+无需多作品聚合、候选补查、应用层排序和多作品回表。
 
-    results = client.search(
-        collection_name="poetry_sentences",
-        query_vector=query_vector,
-        query_filter=query_filter,
-        limit=limit
-    )
+仅文本的完全未缓存请求需要一次 Embedding、一次 Qdrant 查询和一次命中记录读取。
+直接传向量的请求跳过 Embedding 和查询向量缓存，不依赖远端 Embedding 配额。
+结果缓存命中时跳过整个检索链路；向量仍需完成必要校验和缓存键计算。
+SQLite 查询走源记录索引，并使用受限的 Go `database/sql` 只读连接池。
 
-    return [{"score": r.score, **r.payload} for r in results]
+## 可选 rerank 路径
+
+RERANK_ENABLED 默认 false，是后台配置，不是用户界面选项。
+仅在已启用且请求含有有效 query 文本时，取最多 5 个候选，批量读取其译文，调用：
+
+- model：BAAI/bge-reranker-v2-m3。
+- query：用户查询；documents：候选译文。
+- top_n：1。
+- 额外等待上限：初始 1000 ms，且不得超过请求剩余时间。
+
+只有 vector、没有 query 的请求始终使用 limit=1 并跳过 rerank，
+即使后台开关已启用也不多取候选。文本 reranker 无法直接消费查询向量。
+同时提供 query 与 vector 时，调用方须保证两者表达同一意图；
+服务端不会为验证这一点重新调用 Embedding，也不会尝试从向量还原文本。
+
+top_n=1 只限制重排返回数量，模型仍需处理全部候选。
+独立限制 rerank 并发；无配额、无剩余时间、超时或响应无效时返回 ANN 第一名。
+在线路径不自动重试，不排长队，不发起无人等待的后台重排。
+记录重排成功率、超时率和第一名变更率，避免长期调用却几乎总是超时降级。
+
+不默认使用“前两名分差小就重排”：分差不是正确率，需要标注数据校准，
+还会让默认路径多取候选。只有验证质量收益和请求比例后才考虑此策略。
+重排降级结果使用较短缓存寿命，不能冒充完整重排结果长期缓存。
+
+## 返回契约与全文
+
+两种输入共用前述 POST /search 契约，成功返回单个对象：
+
+```json
+{
+  "id": "<work_id>",
+  "original": "床前明月光，疑是地上霜。"
+}
 ```
 
-### 使用示例
+示例仅说明接口形状。实际响应来自数据库，不把相似度展示为准确率。
+搜索 JSON 仅包含作品 ID 和命中诗句，作者、标题和译文在用户点击后按需加载。
+`GET /poems/<work_id>` 返回当前版本的完整作品及所有分段，包括 `id`、`dataset`、
+`title`、`author`、`original`、`translation` 和 `interpretations`。
+原文、译文和赏析始终为数组，没有内容时为 `[]`。
 
-```python
-# 搜索所有表
-results = search_poetry("思念家乡的月亮")
+平台后端通过搜索响应头 `X-Poetry-Generation` 保留版本信息，通过 `X-Poetry-Score`
+获取相关性分数。详情请求可传 `?generation=<generation>`，只接受当前版本，
+过期或无效版本返回 404。省略版本时按当前语料查询；作品 ID 无效或不存在也返回 404。
+搜索响应不携带全文，避免下载、序列化开销随作品长度增长。
 
-# 仅搜索唐诗宋诗
-results = search_poetry("离别的悲伤", tables=["tangsong"])
+缺少输入、空文本、过长查询、无效向量及不支持的过滤条件直接返回参数错误。
+过滤后无候选时返回明确的无结果状态。
+文本请求的 Embedding 失败且无匹配缓存时返回暂不可用；向量请求不受此故障影响。
+Qdrant 或 SQLite 故障仍会影响两种输入；不能用热门诗替代实际命中。
+是否因相关性过低而拒绝返回，须用标注集确定阈值，不硬编码通用相似度线。
+“一个结果”指成功检索时的结果数量，不意味着异常时也强行返回一首诗。
 
-# 搜索宋词和诗经
-results = search_poetry("爱情", tables=["songci", "shijing"])
-```
+## 缓存、并发与配额
 
-## 项目结构
+先采用有界内存 LRU，结果缓存和向量缓存各 32 MiB，总量计入所有实例的预算。
+向量采用 Go `[]float32` 紧凑数组或字节存储。
+结果初始 TTL 为 1 小时，短时降级结果约 30 秒；上线前可根据测量调整。
+缓存以 generation 和模型配置隔离，发布新索引后不复用旧结果。
 
-```
-chinese-poetry/
-├── vector_search/
-│   ├── __init__.py
-│   ├── config.py          # 配置
-│   ├── embedding.py       # SiliconFlow API 封装
-│   ├── importer.py        # 导入脚本
-│   ├── searcher.py        # 检索接口
-│   └── qdrant_data/       # Qdrant 数据目录
-├── chinese_poetry.db
-└── requirements.txt
-```
+- 文本结果键使用规范化 query；向量结果键使用规范化 float32 字节的 SHA-256。
+- 两种结果键均包含输入类型、规范化 filters、generation、profile 和排序配置版本。
+- 向量请求参与 rerank 时，还必须包含 query 文本，防止不同重排意图共用结果。
+- 仅向量请求的排序策略固定为 ANN；与文本 rerank 结果区分。
+- 查询向量缓存仅用于文本输入，键为实际输入文本和 embedding_profile。
+- 向量哈希固定使用小端字节，与实际检索使用同一规范表示；不舍入小数制造命中。
+- 仅去除首尾空白等安全差异，不删除否定词，不随意去标点或合并近义查询。
+- 两种输入均合并相同的结果缓存未命中请求；文本输入另合并相同的 Embedding 请求。
+- singleflight 的条目、等待者数量和寿命有上限，结束后立即清理。
+- 一个等待者取消不终止其他等待者仍需要的共享任务。
+- 详情如需缓存，应与短搜索结果分别设置预算。
 
-### 配置 (config.py)
+先运行 1 个 Go API 进程；测量本地解析或吞吐瓶颈后再增加实例。
+每个实例复用 HTTP Transport 和 Qdrant gRPC 连接，不逐请求创建客户端。
+Embedding、Qdrant、rerank 各自限制并发和队列长度，并设置请求总截止时间。
+线上不采用 60 秒超时加多次重试；并发额度按实测及供应商限额配置。
+多实例和 ul-kb 共用账户时，需要核实并分配共享的 RPM/TPM 配额。
+离线导入限速，不能占满线上请求所需配额。
 
-```python
-# Qdrant
-QDRANT_PATH = "./vector_search/qdrant_data"
+不同缓存层分别计量命中率，不缓存海量一次性查询而导致内存无界增长。
+过载时优先跳过可选重排；无法接受新请求时快速返回 429/503。
+全新文本查询吞吐受模型 RPM、TPM、并发及网络延迟限制，不能由本地 Qdrant QPS 推断。
+纯向量查询不占模型配额，主要受请求解析、Qdrant、SQLite 和服务端并发限制。
+若向量由调用方在线生成，整条用户链路仍包含调用方的模型耗时，不能把它忽略。
 
-# SiliconFlow
-SILICONFLOW_API_KEY = "your-api-key"
-SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
-EMBEDDING_MODEL = "BAAI/bge-m3"
+## Qdrant 资源安排
 
-# Collection
-COLLECTION_NAME = "poetry_sentences"
-VECTOR_DIM = 1024
-```
+FP32 原始向量放 SSD，INT8 量化向量 always_ram=true，HNSW 图优先驻内存，m=16。
+payload 尽量放磁盘，只为实际使用的过滤字段建索引。
+禁止随意将 BGE-M3 1024 维截成 256 或 512 维。
 
-### 新增依赖
+按此前 1,719,090 个元素估算，未计过滤及向量复用：
 
-```txt
-qdrant-client>=1.7.0
-httpx>=0.25.0
-```
+| 内容 | 理论体积 |
+|---|---:|
+| FP32 原始向量 | 约 6.56 GiB |
+| INT8 量化向量 | 约 1.64 GiB |
 
-## 运行命令
+图索引、payload、SQLite、进程、缓存和构建临时空间另计。
+量化一般保留 FP32，不能把 1.64 GiB 当作总磁盘或总内存。
+只返回一条不减少全量向量索引体积，limit=1 也不等于搜索耗时按比例降低。
 
-```bash
-# 导入
-python -m vector_search.importer --tables tangsong songci
+先在 4 核、8 GB 内存、NVMe 上测量；16 GB 留有更大余量。
+单代索引及临时空间先预留约 20–30 GiB，双版本构建、备份另计。
+这些是容量规划起点，不能据此承诺高并发或特定延迟。
 
-# 检索
-python -c "from vector_search.searcher import search_poetry; print(search_poetry('月亮'))"
-```
+## 导入、续传与发布
 
-## 迁移到服务器
+1. 固定 SQLite 快照和 generation，建立作品与源元素定位清单。
+2. 逐记录规范化并验证对齐，输出合格元素和异常原因。
+3. 对译文及 Embedding 配置做哈希，复用已完成计算。
+4. 按模型请求的条数与 token 限制批量生成向量，不固定使用超大批次。
+5. 验证返回向量数量、维度及有限数值，再按确定性 ID 写入 Qdrant。
+6. Qdrant 确认写入后记录元素级检查点，支持幂等重试。
+7. 核对清单、point 数量及原文/译文/全文引用，完成查询抽验。
+8. 每个 generation 使用独立 Qdrant collection，发布同时指定 collection 和
+   SQLite 快照的版本配置。
 
-使用 Qdrant 快照功能：
+断点不能只记录最后一个 poem_id，防止漏掉同一作品的后半部分。
+构建时不先删除线上旧点；新版本验证完成后再切换。
+当前 KISS 实现由配置切换 collection，不实现 alias 自动切换或自动删除旧 collection。
+请求开始时固定 generation，查询和回表必须使用同一版本。
+旧快照至少保留至关联缓存、详情链接的约定有效期和在途请求全部结束。
+后台清理策略应明确详情链接有效期，不能仅切换 Qdrant alias 后立刻删 SQLite。
 
-```python
-# 本地创建快照
-local_client.create_snapshot(collection_name="poetry_sentences")
+## 验收与调参顺序
 
-# 服务器恢复
-remote_client.recover_snapshot(
-    collection_name="poetry_sentences",
-    location="path/to/snapshot.snapshot"
-)
-```
+用户只看一个结果，质量验收改为 Top 1 人工相关率。
+准备约 200 条有代表性的大白话查询及独立的无结果/异常用例，
+标注每条返回的原句是否符合意图，并检查其译文和全文关联是否正确。
+不再用 Top 5 中存在一个好结果替代唯一结果的质量要求。
+
+另外比较近似检索第一名与高精度向量参考结果，定位索引近似损失。
+ANN 命中参考第一名不等于文学含义相关，两个指标必须分别统计。
+同一查询集依次比较：
+
+1. INT8、rescore=false、hnsw_ef=64 的默认路径。
+2. hnsw_ef=32 是否显著损害 Top 1 质量。
+3. 少量候选 FP32 精确重算是否改善 Top 1，及其 SSD I/O 代价。
+4. 5 候选 SiliconFlow rerank 的质量收益、额外延迟与降级比例。
+
+接口验收额外覆盖：文本与对应预计算向量在固定索引和排序策略下的结果一致性，
+两种输入成功响应均只有一个对象，以及纯向量请求的 Embedding/rerank 调用次数为零。
+同时传文本与向量时，验证按向量召回且不重做 Embedding；启用时才用文本重排。
+覆盖维度错误、非有限数值、零向量、profile 不匹配、字段缺失和请求体超限。
+
+性能分开测：文本结果缓存命中、文本向量缓存命中、完全新文本查询、
+向量结果缓存命中、完全新向量查询、启用文本重排。
+本地缓存命中 P95 <20 ms、本地检索及回表 P95 <100 ms 仅作为初始目标。
+远端 Embedding 及端到端冷查询延迟需要实测，不能承诺每次几十毫秒。
+分别用 10/50/100/200 并发及 0%/50%/95% 缓存命中压测，
+记录 P95/P99、持续吞吐、RSS、CPU、队列长度、429/503 和相关率。
+
+只输出一个结果主要减少回表、序列化和结果处理，
+不会让同等 hnsw_ef 下的图搜索直接变快数倍。
+直接传向量可消除服务端 Embedding 调用，但需单独计量向量传输、解析和检索耗时。

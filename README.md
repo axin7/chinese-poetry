@@ -131,3 +131,160 @@
 ## License
 
 [MIT](https://github.com/chinese-poetry/chinese-poetry/blob/master/LICENSE) 许可证。
+
+# 中国古典诗词翻译工具
+
+这个项目提供了一套工具，用于将中国古典诗词导入 SQLite，并基于大模型将原文翻译为现代汉语、生成整体解读。
+
+## 翻译脚本
+
+当前可用的翻译入口是 `translate_poetry.py`。
+
+它会：
+
+- 读取 `loader/datas.json`
+- 遍历数据库中存在的数据表
+- 按 `tag` 字段提取原文
+- 调用上游接口生成 `translation` 和 `interpretation`
+- 将状态、错误信息和结果回写 SQLite
+
+## 功能特点
+
+- 支持 `loader/datas.json` 中的全部数据集
+- 支持通过 `.env` 配置凭据、模型和并发参数
+- 支持上游接口并发到 500
+- 使用数据库状态字段恢复中断任务
+- 翻译失败或原文异常时不会删除原始记录
+- 使用批量提交降低 SQLite 写入开销
+
+## 安装要求
+
+建议使用 `uv` 执行 Python 命令，并安装项目依赖：
+
+```bash
+uv pip install -r requirements.txt
+```
+
+## 环境变量
+
+先复制示例文件：
+
+```bash
+cp .env.example .env
+```
+
+至少需要配置：
+
+- `POETRY_API_KEY`
+- `POETRY_MODEL`
+- `POETRY_BASE_URL`
+- `POETRY_MAX_CONCURRENCY`
+- `POETRY_REQUEST_TIMEOUT`
+- `POETRY_DB_WRITE_BATCH_SIZE`
+
+## 使用方法
+
+### 查看帮助
+
+```bash
+uv run python translate_poetry.py --help
+```
+
+### 运行翻译
+
+```bash
+uv run python translate_poetry.py
+```
+
+### 指定数据库、配置文件和并发
+
+```bash
+uv run python translate_poetry.py \
+  --db chinese_poetry.db \
+  --config loader/datas.json \
+  --tables shijing \
+  --limit 10 \
+  --batch 500 \
+  --workers 500
+```
+
+## 命令行参数
+
+| 参数 | 说明 | 默认值 |
+|------|------|-------|
+| `--db` | 数据库文件路径 | `./chinese_poetry.db` |
+| `--config` | 数据集配置文件路径 | `./loader/datas.json` |
+| `--batch` | 单轮拉取记录数 | `50` |
+| `--tables` | 仅处理指定表 | 全部表 |
+| `--limit` | 最多处理记录数 | 不限制 |
+| `--workers` | 最大并发数 | 从 `.env` 读取 |
+| `--model` | 翻译模型 | 从 `.env` 读取 |
+| `--base-url` | 接口基础地址 | 从 `.env` 读取 |
+| `--timeout` | 请求超时时间 | 从 `.env` 读取 |
+| `--write-batch-size` | SQLite 批量提交阈值 | 从 `.env` 读取 |
+| `--log-level` | 日志级别 | `INFO` |
+
+命令行参数优先级高于 `.env`。
+
+## 数据库字段
+
+翻译脚本会为目标表补齐以下字段：
+
+- `translation`
+- `interpretation`
+- `translation_status`
+- `translation_updated_at`
+- `translation_error`
+- `translation_retry_count`
+
+状态含义：
+
+- `pending`：待翻译
+- `processing`：处理中
+- `done`：已完成
+- `failed`：失败，可后续重试
+- `skipped`：跳过，但保留原始记录
+
+## 恢复机制
+
+系统不再依赖单独的进度文件，而是直接使用数据库状态字段恢复执行：
+
+1. 已完成记录不会重复翻译
+2. `failed` 记录会在后续运行中继续尝试
+3. 上次中断时处于 `processing` 的记录会在新一轮启动时回收为 `pending`
+
+## 错误处理
+
+系统的处理策略如下：
+
+1. API 请求失败会做有限重试
+2. 重试后仍失败时，记录写为 `failed`
+3. 原文为空或模型明确判定不可翻译时，记录写为 `skipped`
+4. 原始古文记录不会被删除
+
+## Go 向量检索
+
+项目提供基于 SiliconFlow、Qdrant 和 SQLite 的 Go 向量检索服务，支持文本或
+1024 维向量输入，并只返回一个最相关结果。部署与导入方式见
+[`docs/vector-search-docker.md`](docs/vector-search-docker.md)。
+
+## 开发与贡献
+
+欢迎提交问题报告和改进建议。如需贡献代码，请遵循以下步骤：
+
+1. Fork项目
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add some amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建Pull Request
+
+## 许可证
+
+本项目基于MIT许可证 - 详见 LICENSE 文件。
+
+## 联系方式
+
+如有问题或建议，请通过以下方式联系：
+
+- 项目主页：[https://github.com/your-username/chinese-poetry-translation](https://github.com/your-username/chinese-poetry-translation)
+- 邮箱：your-email@example.com

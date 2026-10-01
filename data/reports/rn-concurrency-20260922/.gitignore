@@ -1,0 +1,7 @@
+**/__pycache__/
+/envelope/storage/
+/envelope/transfer/
+/envelope/transfer-fast/part-*
+/envelope/native-transfer-sample.bin
+/actual-rn/vector-api
+/actual-rn/evidence.tar.gz

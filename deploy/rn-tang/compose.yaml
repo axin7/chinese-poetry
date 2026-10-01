@@ -1,0 +1,102 @@
+name: poetry-tang
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.15.5
+    restart: unless-stopped
+    mem_limit: 768m
+    memswap_limit: 1024m
+    cpus: 1.75
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+    ports:
+      - "127.0.0.1:17333:6333"
+      - "127.0.0.1:17334:6334"
+    volumes:
+      - type: bind
+        source: /opt/poetry-tang-20260922/storage
+        target: /qdrant/storage
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /opt/poetry-tang-20260922/snapshots
+        target: /qdrant/snapshots
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/6333"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  vector-api:
+    image: qdrant/qdrant:v1.15.5
+    entrypoint: ["/usr/local/bin/vector-api"]
+    command: []
+    restart: unless-stopped
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    mem_limit: 192m
+    memswap_limit: 192m
+    cpus: 0.5
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    environment:
+      SILICONFLOW_API_KEY: ${SILICONFLOW_API_KEY:?Set the actual key in the remote .env}
+      SILICONFLOW_BASE_URL: https://api.siliconflow.cn/v1
+      SILICONFLOW_EMBED_MODEL: BAAI/bge-m3
+      SILICONFLOW_RERANK_MODEL: BAAI/bge-reranker-v2-m3
+      HTTP_ADDR: ":8000"
+      HTTP_PRIVATE_CONTAINER: "true"
+      HTTP_CONCURRENCY: "64"
+      SEARCH_REQUESTS_PER_SECOND: "2"
+      SEARCH_BURST: "4"
+      DETAIL_REQUESTS_PER_SECOND: "10"
+      DETAIL_BURST: "20"
+      DETAIL_CONCURRENCY: "8"
+      DETAIL_CACHE_BYTES: "8388608"
+      DETAIL_CACHE_TTL: "3600"
+      EMBEDDING_REQUESTS_PER_MINUTE: ${EMBEDDING_REQUESTS_PER_MINUTE:-120}
+      QDRANT_URL: http://qdrant:6334
+      SQLITE_DB_PATH: /corpus/chinese_poetry.db
+      DATASETS_CONFIG_PATH: /corpus/datas.json
+      COLLECTION_NAME: poetry_tang_20260922_v1
+      CORPUS_GENERATION: poetry-20260921-v1
+      VECTOR_DIM: "1024"
+      EMBEDDING_PROFILE: sf-bge-m3-1024-v1
+      EMBEDDING_CONCURRENCY: "4"
+      EMBEDDING_TIMEOUT: "5"
+      SEARCH_CONCURRENCY: "16"
+      QDRANT_HNSW_EF: "64"
+      RERANK_ENABLED: "false"
+      RESPONSE_CACHE_BYTES: "8388608"
+      VECTOR_CACHE_BYTES: "8388608"
+      RESPONSE_CACHE_TTL: "3600"
+      GOMEMLIMIT: 160MiB
+    ports:
+      - "127.0.0.1:18080:8000"
+    volumes:
+      - type: bind
+        source: /opt/poetry-tang-20260922/bin/vector-api
+        target: /usr/local/bin/vector-api
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /opt/poetry-tang-20260922/corpus
+        target: /corpus
+        read_only: true
+        bind:
+          create_host_path: false
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

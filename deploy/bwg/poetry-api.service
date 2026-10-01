@@ -1,0 +1,37 @@
+[Unit]
+Description=Chinese poetry vector API
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=poetry
+Group=poetry
+WorkingDirectory=/opt/poetry-tang
+EnvironmentFile=/etc/poetry/vector-api.env
+ExecStart=/opt/poetry-tang/bin/vector-api
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGTERM
+UMask=0077
+MemoryMax=192M
+MemorySwapMax=0
+CPUQuota=50%
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateDevices=true
+TemporaryFileSystem=/tmp:rw,size=16M,nosuid,nodev,noexec
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

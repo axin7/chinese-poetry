@@ -1,0 +1,532 @@
+{
+  "wudai_huajianji": {
+    "fields": {
+      "rhythmic": "TEXT",
+      "notes": "TEXT",
+      "paragraphs": "TEXT",
+      "author": "TEXT",
+      "title": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:09.909550",
+    "last_updated": "2026-03-19T00:03:09.909554"
+  },
+  "wudai_nantang": {
+    "fields": {
+      "rhythmic": "TEXT",
+      "notes": "TEXT",
+      "paragraphs": "TEXT",
+      "author": "TEXT",
+      "title": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:09.916361",
+    "last_updated": "2026-03-19T00:03:09.916364"
+  },
+  "yuanqu": {
+    "fields": {
+      "dynasty": "TEXT",
+      "author": "TEXT",
+      "paragraphs": "TEXT",
+      "title": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:09.964638",
+    "last_updated": "2026-03-19T00:03:09.964641"
+  },
+  "tangsong": {
+    "fields": {
+      "author": "TEXT",
+      "paragraphs": "TEXT",
+      "title": "TEXT",
+      "original_id": "TEXT",
+      "tags": "TEXT",
+      "notes": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": true,
+    "creation_time": "2026-03-19T00:03:11.651545",
+    "last_updated": "2026-03-19T00:03:11.651548"
+  },
+  "mengzi": {
+    "fields": {
+      "chapter": "TEXT",
+      "paragraphs": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:14.135325",
+    "last_updated": "2026-03-19T00:03:14.135328"
+  },
+  "songci": {
+    "fields": {
+      "author": "TEXT",
+      "paragraphs": "TEXT",
+      "rhythmic": "TEXT",
+      "tags": "TEXT",
+      "prologue": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:14.230803",
+    "last_updated": "2026-03-19T00:03:14.230807"
+  },
+  "youmengying": {
+    "fields": {
+      "content": "TEXT",
+      "comment": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:14.414219",
+    "last_updated": "2026-03-19T00:03:14.414222"
+  },
+  "yudingquantangshi": {
+    "fields": {
+      "title": "TEXT",
+      "author": "TEXT",
+      "biography": "TEXT",
+      "paragraphs": "TEXT",
+      "notes": "TEXT",
+      "volume": "TEXT",
+      "no_": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:14.757583",
+    "last_updated": "2026-03-19T00:03:14.757587"
+  },
+  "caocao": {
+    "fields": {
+      "title": "TEXT",
+      "paragraphs": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:15.301470",
+    "last_updated": "2026-03-19T00:03:15.301477"
+  },
+  "chuci": {
+    "fields": {
+      "title": "TEXT",
+      "section": "TEXT",
+      "author": "TEXT",
+      "content": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:15.303683",
+    "last_updated": "2026-03-19T00:03:15.303685"
+  },
+  "shuimotangshi": {
+    "fields": {
+      "author": "TEXT",
+      "title": "TEXT",
+      "paragraphs": "TEXT",
+      "prologue": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:15.306314",
+    "last_updated": "2026-03-19T00:03:15.306316"
+  },
+  "nalanxingde": {
+    "fields": {
+      "title": "TEXT",
+      "para": "TEXT",
+      "author": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:15.309502",
+    "last_updated": "2026-03-19T00:03:15.309504"
+  },
+  "lunyu": {
+    "fields": {
+      "chapter": "TEXT",
+      "paragraphs": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:15.312896",
+    "last_updated": "2026-03-19T00:03:15.312898"
+  },
+  "shijing": {
+    "fields": {
+      "title": "TEXT",
+      "chapter": "TEXT",
+      "section": "TEXT",
+      "content": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-03-19T00:03:15.315474",
+    "last_updated": "2026-03-19T00:03:15.315476"
+  },
+  "daxue": {
+    "fields": {
+      "chapter": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.405339",
+    "last_updated": "2026-09-17T21:06:05.405344"
+  },
+  "zhongyong": {
+    "fields": {
+      "chapter": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.407276",
+    "last_updated": "2026-09-17T21:06:05.407279"
+  },
+  "baijiaxing": {
+    "fields": {
+      "title": "TEXT",
+      "author": "TEXT",
+      "tags": "TEXT",
+      "paragraphs": "TEXT",
+      "origin": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.410016",
+    "last_updated": "2026-09-17T21:06:05.410021"
+  },
+  "dizigui": {
+    "fields": {
+      "book_title": "TEXT",
+      "book_author": "TEXT",
+      "chapter": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.412094",
+    "last_updated": "2026-09-17T21:06:05.412097"
+  },
+  "guwenguanzhi": {
+    "fields": {
+      "book_title": "TEXT",
+      "section": "TEXT",
+      "chapter": "TEXT",
+      "source": "TEXT",
+      "author": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.428749",
+    "last_updated": "2026-09-17T21:06:05.428752"
+  },
+  "qianjiashi": {
+    "fields": {
+      "book_title": "TEXT",
+      "book_author": "TEXT",
+      "section": "TEXT",
+      "chapter": "TEXT",
+      "author": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC",
+      "subchapter": "TEXT"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.437874",
+    "last_updated": "2026-09-17T21:06:05.437878"
+  },
+  "qianziwen": {
+    "fields": {
+      "title": "TEXT",
+      "author": "TEXT",
+      "tags": "TEXT",
+      "paragraphs": "TEXT",
+      "spells": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.440226",
+    "last_updated": "2026-09-17T21:06:05.440231"
+  },
+  "sanzijing_new": {
+    "fields": {
+      "title": "TEXT",
+      "author": "TEXT",
+      "tags": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.442360",
+    "last_updated": "2026-09-17T21:06:05.442363"
+  },
+  "sanzijing_traditional": {
+    "fields": {
+      "title": "TEXT",
+      "author": "TEXT",
+      "tags": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.444314",
+    "last_updated": "2026-09-17T21:06:05.444317"
+  },
+  "shenglvqimeng": {
+    "fields": {
+      "book_title": "TEXT",
+      "book_author": "TEXT",
+      "section": "TEXT",
+      "chapter": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.447357",
+    "last_updated": "2026-09-17T21:06:05.447360"
+  },
+  "tangshisanbaishou": {
+    "fields": {
+      "book_title": "TEXT",
+      "section": "TEXT",
+      "chapter": "TEXT",
+      "subchapter": "TEXT",
+      "author": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.461260",
+    "last_updated": "2026-09-17T21:06:05.461265"
+  },
+  "wenzimengqiu": {
+    "fields": {
+      "book_title": "TEXT",
+      "book_author": "TEXT",
+      "title": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.471837",
+    "last_updated": "2026-09-17T21:06:05.471842"
+  },
+  "youxueqionglin": {
+    "fields": {
+      "book_title": "TEXT",
+      "book_author": "TEXT",
+      "section": "TEXT",
+      "chapter": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.475866",
+    "last_updated": "2026-09-17T21:06:05.475869"
+  },
+  "zengguangxianwen": {
+    "fields": {
+      "book_title": "TEXT",
+      "book_author": "TEXT",
+      "chapter": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.479061",
+    "last_updated": "2026-09-17T21:06:05.479063"
+  },
+  "zhuzijiaxun": {
+    "fields": {
+      "title": "TEXT",
+      "author": "TEXT",
+      "paragraphs": "TEXT",
+      "content_part": "NUMERIC",
+      "content_part_count": "NUMERIC"
+    },
+    "added_fields": [
+      "translation",
+      "interpretation",
+      "translation_status",
+      "translation_updated_at",
+      "translation_error",
+      "translation_retry_count"
+    ],
+    "has_original_id": false,
+    "creation_time": "2026-09-17T21:06:05.480781",
+    "last_updated": "2026-09-17T21:06:05.480784"
+  }
+}

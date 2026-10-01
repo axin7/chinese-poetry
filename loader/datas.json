@@ -1,16 +1,16 @@
 {
-    "cp_path": "./", 
+    "cp_path": "./",
     "datasets": {
-        "wudai-huajianji": {
+        "wudai_huajianji": {
             "name": "五代-花间集",
             "id": 0,
-            "path": "五代诗词/huajianji/", 
+            "path": "五代诗词/huajianji/",
             "excludes": ["README.md"],
             "tag": "paragraphs"
         },
-        "wudai-nantang": {
+        "wudai_nantang": {
             "name": "五代-南唐",
-            "id": 1, 
+            "id": 1,
             "path": "五代诗词/nantang/poetrys.json",
             "tag": "paragraphs"
         },
@@ -18,27 +18,34 @@
             "name": "元曲",
             "id": 2,
             "path": "元曲/yuanqu.json",
-            "tag": "paragraphs"
+            "tag": "paragraphs",
+            "prepend_punctuated_title": true
         },
         "tangsong": {
             "name": "全唐诗全宋诗",
             "id": 3,
             "path": "全唐诗/",
-            "excludes": ["README.md", "表面结构字.json", "error", "authors.song.json", "authors.tang.json"],
+            "excludes": [
+                "README.md",
+                "表面结构字.json",
+                "error",
+                "authors.song.json",
+                "authors.tang.json",
+                "唐诗三百首.json"
+            ],
             "tag": "paragraphs"
         },
         "mengzi": {
-            "name": "四书五经-孟子", 
+            "name": "四书五经-孟子",
             "id": 4,
             "path": "四书五经/mengzi.json",
-            "tag": "paragraphs",
-            "comments": "四书五经的其他文件不符合两层结构, 以后再想办法处理吧."
+            "tag": "paragraphs"
         },
         "songci": {
             "name": "宋词",
             "id": 5,
             "path": "宋词/",
-            "excludes": ["authors.song.json", "ci.db", "main.py", "README.md", "UpdateCi.py"],
+            "excludes": ["author.song.json", "ci.db", "main.py", "README.md", "UpdateCi.py"],
             "tag": "paragraphs"
         },
         "youmengying": {
@@ -75,8 +82,7 @@
             "name": "纳兰性德",
             "id": 11,
             "path": "纳兰性德/纳兰性德诗集.json",
-            "tag": "para",
-            "comments": "蒙学文件夹下的非常规格式文件没有包括在这个json中"
+            "tag": "para"
         },
         "lunyu": {
             "name": "论语",
@@ -89,6 +95,196 @@
             "id": 13,
             "path": "诗经/shijing.json",
             "tag": "content"
+        },
+        "daxue": {
+            "name": "四书五经-大学",
+            "id": 14,
+            "path": "四书五经/daxue.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": [],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "zhongyong": {
+            "name": "四书五经-中庸",
+            "id": 15,
+            "path": "四书五经/zhongyong.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": [],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "baijiaxing": {
+            "name": "蒙学-百家姓",
+            "id": 16,
+            "path": "蒙学/baijiaxing.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": [],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "dizigui": {
+            "name": "蒙学-弟子规",
+            "id": 17,
+            "path": "蒙学/dizigui.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": ["content"],
+                "inherit": [{"title": "book_title", "author": "book_author"}],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "guwenguanzhi": {
+            "name": "蒙学-古文观止",
+            "id": 18,
+            "path": "蒙学/guwenguanzhi.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": ["content", "content"],
+                "inherit": [
+                    {"title": "book_title"},
+                    {"title": "section"}
+                ],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "qianjiashi": {
+            "name": "蒙学-千家诗",
+            "id": 19,
+            "path": "蒙学/qianjiashi.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": ["content", "content"],
+                "inherit": [
+                    {"title": "book_title", "author": "book_author"},
+                    {"type": "section"}
+                ],
+                "expand_content_records": true,
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "qianziwen": {
+            "name": "蒙学-千字文",
+            "id": 20,
+            "path": "蒙学/qianziwen.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": [],
+                "aligned_fields": ["spells"],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "sanzijing_new": {
+            "name": "蒙学-三字经新版",
+            "id": 21,
+            "path": "蒙学/sanzijing-new.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": [],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "sanzijing_traditional": {
+            "name": "蒙学-三字经传统版",
+            "id": 22,
+            "path": "蒙学/sanzijing-traditional.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": [],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "shenglvqimeng": {
+            "name": "蒙学-声律启蒙",
+            "id": 23,
+            "path": "蒙学/shenglvqimeng.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": ["content", "content"],
+                "inherit": [
+                    {"title": "book_title", "author": "book_author"},
+                    {"title": "section"}
+                ],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "tangshisanbaishou": {
+            "name": "蒙学-唐诗三百首",
+            "id": 24,
+            "path": "蒙学/tangshisanbaishou.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": ["content", "content"],
+                "inherit": [
+                    {"title": "book_title"},
+                    {"type": "section"}
+                ],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "wenzimengqiu": {
+            "name": "蒙学-文字蒙求",
+            "id": 25,
+            "path": "蒙学/wenzimengqiu.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": ["content"],
+                "inherit": [{"title": "book_title", "author": "book_author"}],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "youxueqionglin": {
+            "name": "蒙学-幼学琼林",
+            "id": 26,
+            "path": "蒙学/youxueqionglin.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": ["content", "content"],
+                "inherit": [
+                    {"title": "book_title", "author": "book_author"},
+                    {"title": "section"}
+                ],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "zengguangxianwen": {
+            "name": "蒙学-增广贤文",
+            "id": 27,
+            "path": "蒙学/zengguangxianwen.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": ["content"],
+                "inherit": [{"title": "book_title", "author": "book_author"}],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
+        },
+        "zhuzijiaxun": {
+            "name": "蒙学-朱子家训",
+            "id": 28,
+            "path": "蒙学/zhuzijiaxun.json",
+            "tag": "paragraphs",
+            "object_records": {
+                "path": [],
+                "max_paragraphs": 80,
+                "max_chars": 3000
+            }
         }
     }
 }

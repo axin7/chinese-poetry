@@ -1,0 +1,91 @@
+# Imported by /etc/caddy/Caddyfile; auth include is required and managed privately.
+# Auth include defines: @unauthorized not header Authorization "Bearer TOKEN".
+rn-proxy-test.anyveo.com {
+	tls /etc/poetry/tls/fullchain.pem /etc/poetry/tls/privkey.pem
+	header {
+		Cache-Control "no-store"
+		X-Origin-ID "bwg-poetry-network-20260930"
+		defer
+	}
+
+	@poetry path /poetry/search /poetry/poems/*
+	handle @poetry {
+		route {
+			import /etc/poetry/poetry-auth.caddy
+			respond @unauthorized 401
+
+			handle /poetry/search {
+				route {
+					@invalidSearchMethod not method POST
+					header @invalidSearchMethod Allow "POST"
+					respond @invalidSearchMethod 405
+					request_body {
+						max_size 64KiB
+					}
+					rewrite * /search
+					reverse_proxy 127.0.0.1:18080 {
+						header_up -Authorization
+						transport http {
+							dial_timeout 2s
+							response_header_timeout 15s
+							read_timeout 15s
+						}
+					}
+				}
+			}
+
+			handle /poetry/poems/* {
+				route {
+					@invalidPoemMethod not method GET
+					header @invalidPoemMethod Allow "GET"
+					respond @invalidPoemMethod 405
+					uri strip_prefix /poetry
+					reverse_proxy 127.0.0.1:18080 {
+						header_up -Authorization
+						transport http {
+							dial_timeout 2s
+							response_header_timeout 15s
+							read_timeout 15s
+						}
+					}
+				}
+			}
+		}
+	}
+
+	handle /rn-proxy-check {
+		route {
+			@invalidCheckMethod not method GET
+			header @invalidCheckMethod Allow "GET"
+			respond @invalidCheckMethod 405
+			header Content-Type application/json
+			respond `{"origin":"bwg"}` 200
+		}
+	}
+
+	handle {
+		respond 404
+	}
+}
+
+http://rn-proxy-test.anyveo.com {
+	header {
+		Cache-Control "no-store"
+		X-Origin-ID "bwg-poetry-network-20260930"
+		defer
+	}
+
+	handle /rn-proxy-check {
+		route {
+			@invalidCheckMethod not method GET
+			header @invalidCheckMethod Allow "GET"
+			respond @invalidCheckMethod 405
+			header Content-Type application/json
+			respond `{"origin":"bwg"}` 200
+		}
+	}
+
+	handle {
+		redir https://rn-proxy-test.anyveo.com{uri} 308
+	}
+}
