@@ -31,9 +31,10 @@ class PlainDataLoader():
                     body += poem[tag]
             return body
         # a dir, probably with a skip list
-        subpaths = os.listdir(full_path)
+        excludes = set(configs.get("excludes", []))
+        subpaths = sorted(os.listdir(full_path))
         for filename in subpaths:
-            if filename in configs["excludes"]:
+            if filename in excludes:
                 continue
             with open(os.path.join(full_path, filename), mode='r', encoding='utf-8') as file:
                 data = json.load(file)
